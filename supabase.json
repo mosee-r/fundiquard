@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0.0",
+  "api": {
+    "port": 54321,
+    "schemas": ["public"],
+    "extra_search_path": ["public", "extensions"],
+    "max_rows": 1000
+  },
+  "db": {
+    "port": 54322,
+    "major_version": 15,
+    "seed_file": "seed.sql"
+  },
+  "realtime": {
+    "enabled": true,
+    "max_bytes_per_second": 1000000,
+    "max_connections": 5000,
+    "max_payload_bytes": 131072,
+    "timeout_sec": 3600,
+    "ssl_enforce": false
+  },
+  "analytics": {
+    "enabled": false,
+    "port": 4000,
+    "vector_port": 3327,
+    "pg_meta_port": 5555
+  },
+  "auth": {
+    "enabled": true,
+    "twilio_autoconfirm": false,
+    "twitter_autoconfirm": false
+  },
+  "storage": {
+    "file_size_limit": 52428800
+  },
+  "functions": [
+    {
+      "slug": "auth",
+      "verify_jwt": false
+    },
+    {
+      "slug": "jobs",
+      "verify_jwt": true
+    },
+    {
+      "slug": "bids",
+      "verify_jwt": true
+    }
+  ]
+}

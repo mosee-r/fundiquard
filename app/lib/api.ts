@@ -1,8 +1,14 @@
-// API Client for FundiGuard Backend
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-    ? 'http://localhost:3001' 
-    : 'https://mbudwsejaucyauthctpo.supabase.co');
+// API Client for FundiGuard Backend (Supabase Edge Functions)
+const SUPABASE_URL = 'https://mbudwsejaucyauthctpo.supabase.co'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || SUPABASE_URL;
+
+// Helper to construct Edge Function URLs
+const getEdgeFunctionUrl = (functionName: string) => {
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return `http://localhost:54321/functions/v1/${functionName}`
+  }
+  return `${API_URL}/functions/v1/${functionName}`
+}
 
 export interface AuthResponse {
     token: string;
@@ -36,9 +42,13 @@ export interface JobsResponse {
 
 async function apiCall<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    functionName?: string
 ): Promise<T> {
-    const url = `${API_URL}/api${endpoint}`;
+    // Determine which Edge Function to call
+    const edgeFunc = functionName || endpoint.split('/')[1] || 'auth'
+    const url = `${getEdgeFunctionUrl(edgeFunc)}`
+    
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -69,7 +79,7 @@ async function apiCall<T>(
             console.error('Network error - API unreachable:', url);
             throw new Error(
                 `Unable to connect to server. Please check your internet connection. ` +
-                `(Trying to reach: ${API_URL})`
+                `(Trying to reach: ${url})`
             );
         }
         throw error;
@@ -85,26 +95,32 @@ export const api = {
             password: string;
             full_name: string;
             role: 'client' | 'pro';
-        }) => apiCall<AuthResponse>('/auth/register', {
+        }) => apiCall<AuthResponse>('/auth', {
             method: 'POST',
-            body: JSON.stringify(data),
-        }),
+            body: JSON.stringify({
+                ...data,
+                action: 'register'
+            }),
+        }, 'auth'),
 
         login: async (data: {
             phone_number: string;
             password: string;
-        }) => apiCall<AuthResponse>('/auth/login', {
+        }) => apiCall<AuthResponse>('/auth', {
             method: 'POST',
-            body: JSON.stringify(data),
-        }),
+            body: JSON.stringify({
+                ...data,
+                action: 'login'
+            }),
+        }, 'auth'),
 
         requestOTP: async (data: {
             phone_number: string;
             action: 'login' | 'register';
-        }) => apiCall<{ message: string; debug?: string }>('/auth/request-otp', {
+        }) => apiCall<{ message: string; debug?: string }>('/auth', {
             method: 'POST',
             body: JSON.stringify(data),
-        }),
+        }, 'auth'),
 
         verifyOTP: async (data: {
             phone_number: string;
@@ -126,7 +142,7 @@ export const api = {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
-            }),
+            }, 'jobs'),
 
         create: async (token: string, data: {
             title: string;
@@ -141,14 +157,14 @@ export const api = {
                 'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify(data),
-        }),
+        }, 'jobs'),
 
         getById: async (token: string, jobId: string) =>
             apiCall<JobData>(`/jobs/${jobId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
-            }),
+            }, 'jobs'),
     },
 
     // Bids endpoints
@@ -164,37 +180,38 @@ export const api = {
                 'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify(data),
-        }),
+        }, 'bids'),
 
         getForJob: async (jobId: string) =>
             apiCall<any[]>(`/bids?job_id=${jobId}`, {
                 method: 'GET',
-            }),
+            }, 'bids'),
 
         getMyBids: async (token: string) =>
-            apiCall<any[]>('/bids/my-bids', {
+            apiCall<any[]>('/bids', {
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
-            }),
+            }, 'bids'),
 
         accept: async (token: string, bidId: string) =>
-            apiCall<any>('/bids/accept', {
+            apiCall<any>(`/bids/${bidId}`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({ bid_id: bidId }),
-            }),
+                body: JSON.stringify({ action: 'accept' }),
+            }, 'bids'),
 
         reject: async (token: string, bidId: string) =>
-            apiCall<any>('/bids/reject', {
+            apiCall<any>(`/bids/${bidId}`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify({ bid_id: bidId }),
-            }),
+                body: JSON.stringify({ action: 'reject' }),
+            }, 'bids'),
     },
 
     // Bookings endpoints
