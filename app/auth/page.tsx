@@ -310,6 +310,7 @@ export default function AuthPage() {
                                                 padding: "12px 16px", 
                                                 borderRadius: 8, 
                                                 border: email && !validateEmail(email) ? "1px solid #c62828" : "1px solid var(--border)", 
+                                                backgroundColor: "var(--background-secondary)",
                                                 fontSize: "1rem", 
                                                 outline: "none", 
                                                 marginBottom: 4

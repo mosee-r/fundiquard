@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, ReactNode } from "react";
+import Button from "./Button";
 
 interface ModalProps {
   isOpen: boolean;
@@ -6,6 +7,8 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   size?: "sm" | "md" | "lg";
+  footerActions?: ReactNode;
+  hideCancelButton?: boolean;
 }
 
 export default function Modal({
@@ -14,6 +17,8 @@ export default function Modal({
   title,
   children,
   size = "md",
+  footerActions,
+  hideCancelButton = false,
 }: ModalProps) {
   if (!isOpen) return null;
 
@@ -47,6 +52,8 @@ export default function Modal({
           boxShadow: "var(--shadow-lg)",
           maxHeight: "90vh",
           overflow: "auto",
+          display: "flex",
+          flexDirection: "column",
           ...sizeMap[size],
         }}
         onClick={(e) => e.stopPropagation()}
@@ -85,8 +92,26 @@ export default function Modal({
         </div>
 
         {/* Content */}
-        <div style={{ padding: "20px" }}>
+        <div style={{ padding: "20px", flexGrow: 1 }}>
           {children}
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: "20px",
+            borderTop: "1px solid var(--border)",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "12px",
+          }}
+        >
+          {!hideCancelButton && (
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+          )}
+          {footerActions}
         </div>
       </div>
     </div>

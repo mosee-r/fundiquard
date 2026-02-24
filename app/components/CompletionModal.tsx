@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import PhotoUploader from './PhotoUploader';
 import { api, auth } from '@/app/lib/api';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface CompletionModalProps {
   isOpen: boolean;
@@ -22,7 +24,8 @@ export default function CompletionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (completionPhotos.length === 0) {
       setError('Please upload at least one completion photo');
       return;
@@ -57,44 +60,22 @@ export default function CompletionModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-      onClick={() => !isSubmitting && onClose()}
-    >
-      <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: 12,
-          padding: 32,
-          maxWidth: 600,
-          width: '90%',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2
-          style={{
-            fontFamily: 'Poppins',
-            fontWeight: 700,
-            fontSize: '1.5rem',
-            marginBottom: 8,
-          }}
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="✅ Mark Job Complete"
+      footerActions={
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isSubmitting || completionPhotos.length === 0}
         >
-          ✅ Mark Job Complete
-        </h2>
+          {isSubmitting ? 'Submitting...' : '✓ Mark Complete & Submit'}
+        </Button>
+      }
+    >
+      <form onSubmit={handleSubmit}>
         <p
           style={{
             color: 'var(--text-secondary)',
@@ -176,49 +157,7 @@ export default function CompletionModal({
             resize: 'vertical',
           }}
         />
-
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            onClick={onClose}
-            disabled={isSubmitting}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              borderRadius: 8,
-              border: '1px solid var(--border)',
-              background: 'white',
-              fontWeight: 600,
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              opacity: isSubmitting ? 0.5 : 1,
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting || completionPhotos.length === 0}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              borderRadius: 8,
-              background:
-                isSubmitting || completionPhotos.length === 0
-                  ? '#BDBDBD'
-                  : 'var(--green)',
-              color: 'white',
-              fontWeight: 600,
-              cursor:
-                isSubmitting || completionPhotos.length === 0
-                  ? 'not-allowed'
-                  : 'pointer',
-              border: 'none',
-            }}
-          >
-            {isSubmitting ? 'Submitting...' : '✓ Mark Complete & Submit'}
-          </button>
-        </div>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }
